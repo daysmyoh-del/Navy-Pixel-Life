@@ -277,14 +277,11 @@ export class Ship {
 
     draw(ctx, camera) {
         // Draw Ship relative to Camera
-        // Transform Context to World Position of Ship
+        // Context is ALREADY transformed to World Space by GameState.
+        // So we just need to translate to the Ship's World Position.
+
         ctx.save();
-
-        // Translate to Ship World Pos relative to Camera
-        const screenX = this.worldX - camera.x;
-        const screenY = this.worldY - camera.y;
-
-        ctx.translate(screenX, screenY);
+        ctx.translate(this.worldX, this.worldY);
         ctx.rotate(this.worldRotation);
 
         // Draw Deck (Local Coords)

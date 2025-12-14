@@ -57,7 +57,9 @@ export class JobSystem {
             ctx.fillStyle = '#ffeb3b';
             ctx.font = '16px monospace';
             ctx.textAlign = 'left';
-            ctx.fillText(`ORDERS: ${this.currentJob.text}`, 20, 40);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(`ORDERS: ${this.currentJob.text}`, 20, 35);
+            ctx.textBaseline = 'alphabetic'; // Reset
         }
 
         // Score
