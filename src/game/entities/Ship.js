@@ -123,6 +123,30 @@ export class Ship {
             type: 'LADDER_UP',
             deckIndex: 1
         });
+
+        // Restricted Zones
+        this.zones = [
+            {
+                name: "The Bridge",
+                deckIndex: 0,
+                x: -150, y: -200, width: 300, height: 200, // Area around Helm
+                requiredRank: 3 // Officer+
+            },
+            {
+                name: "Captain's Quarters",
+                deckIndex: 1,
+                x: -150, y: 300, width: 300, height: 200, // Back of Lower Deck
+                requiredRank: 4 // Captain
+            }
+        ];
+    }
+
+    getZoneAt(x, y, deckIndex) {
+        return this.zones.find(z => {
+            return z.deckIndex === deckIndex &&
+                x >= z.x && x <= z.x + z.width &&
+                y >= z.y && y <= z.y + z.height;
+        });
     }
 
     switchDeck(sailor, newDeckIndex) {
@@ -337,6 +361,27 @@ export class Ship {
                 }
             });
         });
+
+        // Debug Draw Zones (Optional, maybe semi-transparent red if locked?)
+        if (this.game.stateManager.currentState.player) {
+            const pRank = this.game.stateManager.currentState.player.rank;
+            this.zones.forEach(z => {
+                if (z.deckIndex !== this.currentDeckIndex) return;
+
+                // If locked for player
+                if (pRank < z.requiredRank) {
+                    ctx.fillStyle = 'rgba(255, 0, 0, 0.2)';
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 4;
+                    ctx.fillRect(z.x, z.y, z.width, z.height);
+                    ctx.strokeRect(z.x, z.y, z.width, z.height);
+
+                    ctx.fillStyle = 'red';
+                    ctx.font = '16px monospace';
+                    ctx.fillText("RESTRICTED", z.x + z.width / 2, z.y + z.height / 2);
+                }
+            });
+        }
 
         // Draw Stations Interactions (Only for Current Deck)
         this.stations.forEach(s => {
