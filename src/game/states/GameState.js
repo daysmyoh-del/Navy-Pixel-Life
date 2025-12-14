@@ -55,9 +55,12 @@ export class GameState {
         // Logic for auto-zoom?
         // If in combat (or general quarters), zoom in. Else zoom out.
         // Simple toggle for now: Distance based or just default out
-        this.camera.setZoom(0.6); // Wide view of ship
-
         this.jobSystem.update(deltaTime);
+
+        // Dynamic Zoom based on speed (or Combat)
+        // Base zoom 0.8. Max speed (5.0?) -> Zoom 0.4
+        const targetZoom = 0.8 - (this.ship.speed * 0.05);
+        this.camera.setZoom(Math.max(0.4, targetZoom));
     }
 
     draw(ctx) {
@@ -108,10 +111,10 @@ export class GameState {
         // Ocean Items (Creatures)
         this.drawSeaCreatures(ctx);
 
-        ctx.restore();
-
-        // Draw Ship (It handles its own camera transform)
+        // 4. Draw Ship (draws in World Space now)
         this.ship.draw(ctx, this.camera);
+
+        ctx.restore();
 
         // HUD (Fixed on screen)
         this.jobSystem.draw(ctx);
