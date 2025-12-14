@@ -45,10 +45,15 @@ export class Game {
             assetMap[key] = value;
         }
 
-        await this.assetManager.loadImages(assetMap);
-        console.log('Assets loaded!');
+        try {
+            await this.assetManager.loadImages(assetMap);
+            console.log('Assets loaded!');
+        } catch (e) {
+            console.error('Failed to load assets', e);
+        }
 
-        this.stateManager.switchState('MENU');
+        // Force Start to Navy Game
+        this.stateManager.switchState('GAME', { branch: CONSTANTS.BRANCHES.NAVY });
         requestAnimationFrame(this.loop.bind(this));
     }
 
@@ -74,7 +79,17 @@ export class Game {
     }
 
     draw() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.stateManager.draw(this.ctx);
+        // Fallback info
+        this.ctx.fillStyle = '#111';
+        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (this.stateManager.currentState) {
+            this.stateManager.draw(this.ctx);
+        } else {
+            // Debug text if no state
+            this.ctx.fillStyle = 'red';
+            this.ctx.font = '20px Arial';
+            this.ctx.fillText('Loading...', 50, 50);
+        }
     }
 }
