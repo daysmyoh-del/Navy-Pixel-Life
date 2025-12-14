@@ -2,12 +2,14 @@ import { Ship } from '../entities/Ship.js';
 import { Sailor } from '../entities/Sailor.js';
 import { Camera } from '../managers/Camera.js';
 import { SoundManager } from '../managers/SoundManager.js';
+import { JobSystem } from '../managers/JobSystem.js';
 
 export class GameState {
     constructor(game) {
         this.game = game;
         this.camera = new Camera(game.canvas.width, game.canvas.height);
         this.soundManager = new SoundManager();
+        this.jobSystem = new JobSystem(game);
 
         this.ship = null;
         this.player = null;
@@ -54,6 +56,8 @@ export class GameState {
         // If in combat (or general quarters), zoom in. Else zoom out.
         // Simple toggle for now: Distance based or just default out
         this.camera.setZoom(0.6); // Wide view of ship
+
+        this.jobSystem.update(deltaTime);
     }
 
     draw(ctx) {
@@ -86,10 +90,20 @@ export class GameState {
         // Parallax waves?
         this.drawWaves(ctx);
 
+        // Placeholder for projectiles and particles (not defined in original code, but in instruction)
+        // Assuming these would be defined elsewhere or are future additions.
+        // For now, they will cause errors if not defined.
+        // this.projectiles.forEach(p => p.draw(ctx));
+        // this.particles.forEach(p => p.draw(ctx));
+
         // 2. Draw Ship (which draws crew)
         this.ship.draw(ctx, this.camera);
 
-        // 3. HUD
+        ctx.restore();
+
+        // HUD (Fixed on screen)
+        this.jobSystem.draw(ctx);
+
         ctx.fillStyle = 'white';
         ctx.font = '20px Arial';
         ctx.fillText('NAVY LIFE SIMULATOR', 20, 30);

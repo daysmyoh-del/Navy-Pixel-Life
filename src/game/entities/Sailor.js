@@ -101,6 +101,12 @@ export class Sailor {
             // Ignore for now.
         }
 
+        // Active Job Marker (Visual)
+        if (this.isPlayer && this.game.stateManager.currentState.jobSystem && this.game.stateManager.currentState.jobSystem.currentJob) {
+            // Maybe a small arrow pointing to objective?
+            // For now, handled in JobSystem.draw mostly.
+        }
+
         // Combat: Click to shoot
         if (this.game.inputManager.isMouseDown() && this.weaponCooldown <= 0) {
             this.shootHandgun();
@@ -122,7 +128,15 @@ export class Sailor {
                         return;
                     }
 
+
                     alert('Interact: ' + station.type);
+
+                    // Job Check
+                    if (this.game.stateManager.currentState.jobSystem) {
+                        const jobDone = this.game.stateManager.currentState.jobSystem.checkInteraction(station.type, station);
+                        if (jobDone) return; // Don't do other stuff if job just completed
+                    }
+
                     // Simulate firing for XP (Prototype)
                     if (station.type === 'CANNON') {
                         this.gainXp(20);

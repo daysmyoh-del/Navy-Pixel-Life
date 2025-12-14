@@ -51,4 +51,58 @@ export class TextureGenerator {
     generateSand() { return this.createNoiseTexture(64, 64, '#fdd835', 20); }
     generateDarkWater() { return this.createNoiseTexture(64, 64, '#1565c0', 30); }
     generateMud() { return this.createNoiseTexture(64, 64, '#5d4037', 30); }
+
+    generateWoodPlank() {
+        // Detailed Wood texture
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#8d6e63'; // Base brown
+        ctx.fillRect(0, 0, 64, 64);
+
+        // Plank lines
+        ctx.strokeStyle = '#5d4037';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < 64; i += 16) {
+            ctx.moveTo(0, i);
+            ctx.lineTo(64, i);
+        }
+        ctx.stroke();
+
+        // Nail holes
+        ctx.fillStyle = '#3e2723';
+        for (let i = 0; i < 64; i += 16) {
+            ctx.fillRect(2, i + 6, 2, 2);
+            ctx.fillRect(60, i + 6, 2, 2);
+        }
+
+        return cvs;
+    }
+
+    generateMetal() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#607d8b'; // Metal Grey
+        ctx.fillRect(0, 0, 64, 64);
+
+        // Rivets
+        ctx.fillStyle = '#455a64';
+        for (let x = 4; x < 64; x += 14) {
+            for (let y = 4; y < 64; y += 14) {
+                ctx.fillRect(x, y, 3, 3);
+            }
+        }
+        // Shine
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(64, 64);
+        ctx.stroke();
+
+        return cvs;
+    }
 }

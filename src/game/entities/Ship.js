@@ -28,6 +28,45 @@ export class Ship {
 
         this.particles = [];
         this.smokeTimer = 0;
+
+        // Textures
+        const texGen = new (game.assetManager.constructor ? game.assetManager.constructor : Object)(); // Hack if generic, but usually TextureGenerator is separate
+        // Actually, we can just instantiate TextureGenerator if we import it, or pass it in.
+        // Assuming Game has one or we create one temp.
+        // Let's rely on cached patterns if possible, or create them here.
+        this.woodPattern = null;
+        this.metalPattern = null;
+    }
+
+    // Helper to init patterns
+    initPatterns(ctx) {
+        if (!this.woodPattern) {
+            // We need a TextureGenerator instance. 
+            // In a pro engine, this is central. Here we cheat slightly for specific patterns.
+            const woodCvs = this.createTextureCanvas(64, 64, '#8d6e63', (c) => {
+                c.strokeStyle = '#4e342e'; c.lineWidth = 2;
+                for (let i = 0; i < 64; i += 16) { c.moveTo(0, i); c.lineTo(64, i); }
+                c.stroke();
+                c.fillStyle = '#3e2723';
+                for (let i = 0; i < 64; i += 16) { c.fillRect(4, i + 7, 2, 2); c.fillRect(58, i + 7, 2, 2); }
+            });
+            this.woodPattern = ctx.createPattern(woodCvs, 'repeat');
+
+            const metalCvs = this.createTextureCanvas(64, 64, '#607d8b', (c) => {
+                c.fillStyle = '#455a64';
+                for (let x = 4; x < 64; x += 16) for (let y = 4; y < 64; y += 16) c.fillRect(x, y, 4, 4);
+            });
+            this.metalPattern = ctx.createPattern(metalCvs, 'repeat');
+        }
+    }
+
+    createTextureCanvas(w, h, base, drawFn) {
+        const cvs = document.createElement('canvas');
+        cvs.width = w; cvs.height = h;
+        const ctx = cvs.getContext('2d');
+        ctx.fillStyle = base; ctx.fillRect(0, 0, w, h);
+        drawFn(ctx);
+        return cvs;
     }
 
     parseStations() {
@@ -159,6 +198,9 @@ export class Ship {
         const offsetX = -(this.deckMap[0].length * this.tileSize) / 2;
         const offsetY = -(this.deckMap.length * this.tileSize) / 2;
 
+        // Init Patterns once
+        this.initPatterns(ctx);
+
         this.deckMap.forEach((row, r) => {
             row.forEach((tile, c) => {
                 const tx = offsetX + c * this.tileSize;
@@ -166,23 +208,48 @@ export class Ship {
 
                 if (tile === 0) return; // Empty (Water visible below)
 
-                if (tile === 1) {
-                    ctx.fillStyle = '#654'; // Wood Deck
+                if (tile === 1 || tile === 3) { // Deck or Cannon base
+                    ctx.fillStyle = this.woodPattern || '#8d6e63';
                     ctx.fillRect(tx, ty, this.tileSize, this.tileSize);
-                    ctx.strokeStyle = '#543';
-                    ctx.strokeRect(tx, ty, this.tileSize, this.tileSize);
-                } else if (tile === 2) {
-                    ctx.fillStyle = '#333'; // Railing / Wall
+
+                    // Shadow for depth
+                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                    ctx.fillRect(tx, ty, this.tileSize, 2);
+                }
+
+                if (tile === 2) {
+                    // Wall / Railing
+                    ctx.fillStyle = this.metalPattern || '#546e7a';
                     ctx.fillRect(tx, ty, this.tileSize, this.tileSize);
-                } else if (tile === 3) {
-                    ctx.fillStyle = '#654';
-                    ctx.fillRect(tx, ty, this.tileSize, this.tileSize);
-                    // Cannon
-                    ctx.fillStyle = 'black';
+                    ctx.fillStyle = 'rgba(0,0,0,0.3)'; // Top bevel
+                    ctx.fillRect(tx, ty, this.tileSize, 8);
+                }
+
+                if (tile === 3) {
+                    // Detailed Cannon
+                    const cx = tx + 32;
+                    const cy = ty + 32;
+
+                    // Base Wheels
+                    ctx.fillStyle = '#3e2723';
+                    ctx.fillRect(cx - 20, cy - 10, 40, 20);
+
+                    // Barrel (Black Metal)
+                    ctx.fillStyle = '#212121';
+                    ctx.save();
+                    // Face slightly starboard/port?
+                    // Just simple cylinder for top down
                     ctx.beginPath();
-                    ctx.arc(tx + 32, ty + 32, 20, 0, Math.PI * 2);
+                    ctx.ellipse(cx, cy, 15, 25, 0, 0, Math.PI * 2);
                     ctx.fill();
-                    ctx.fillRect(tx + 10, ty + 20, 44, 24); // Barrel (facing side?)
+
+                    // Fuse point
+                    ctx.fillStyle = '#ff5722';
+                    ctx.beginPath();
+                    ctx.arc(cx, cy + 10, 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    ctx.restore();
                 }
             });
         });
