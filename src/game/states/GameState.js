@@ -3,6 +3,7 @@ import { Sailor } from '../entities/Sailor.js';
 import { Camera } from '../managers/Camera.js';
 import { SoundManager } from '../managers/SoundManager.js';
 import { JobSystem } from '../managers/JobSystem.js';
+import { Projectile } from '../entities/Projectile.js';
 
 export class GameState {
     constructor(game) {
@@ -13,7 +14,11 @@ export class GameState {
 
         this.ship = null;
         this.player = null;
+        this.ship = null;
+        this.player = null;
         this.oceanOffset = { x: 0, y: 0 };
+        this.projectiles = [];
+        this.particles = []; // Reuse for smoke etc
     }
 
     enter(params) {
@@ -57,6 +62,13 @@ export class GameState {
 
         this.ship.update(deltaTime);
 
+        // Update Projectiles
+        for (let i = this.projectiles.length - 1; i >= 0; i--) {
+            const p = this.projectiles[i];
+            p.update(deltaTime);
+            if (p.markedForDeletion || p.life <= 0) this.projectiles.splice(i, 1);
+        }
+
         this.jobSystem.update(deltaTime);
 
         // Update Camera to follow PLAYER
@@ -89,10 +101,10 @@ export class GameState {
 
         for (let r = 40; r < 60; r++) { // Spwn mid-ship
             for (let c = 5; c < 20; c++) {
-                if (map[r] && map[r][c] === 1) { // 1 = Deck (Old ID) or CONSTANTS check?
-                    // We used consts in generation but raw IDs might be simpler if imported.
-                    // Let's assume 1 is Deck. 
-                    // Actually better: check if it's NOT empty/wall
+                // Check if valid deck logic
+                // If map[r][c] is NOT Empty(0) or VLS(9) or HELIPAD(10)
+                // Just check if it is DECK(1) for safety
+                if (map[r] && map[r][c] === 1) {
                     return {
                         x: offX + c * 64 + 32,
                         y: offY + r * 64 + 32
@@ -101,6 +113,13 @@ export class GameState {
             }
         }
         return { x: 0, y: 0 };
+    }
+
+    spawnProjectile(x, y, angle, speed, color, config) {
+        // signature: constructor(game, x, y, angle, speed, team, weaponConfig)
+        const team = 'PLAYER'; // or 'ENEMY' depending on who shot?
+        // Sailor passes 'config' which has color etc.
+        this.projectiles.push(new Projectile(this.game, x, y, angle, speed, team, config));
     }
 
     draw(ctx) {
@@ -150,6 +169,9 @@ export class GameState {
 
         // Ocean Items (Creatures)
         this.drawSeaCreatures(ctx);
+
+        // Projectiles
+        this.projectiles.forEach(p => p.draw(ctx));
 
         // 4. Draw Ship (draws in World Space now)
         this.ship.draw(ctx, this.camera);
