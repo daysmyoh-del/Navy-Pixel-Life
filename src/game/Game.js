@@ -2,6 +2,7 @@ import { CONSTANTS } from './Constants.js';
 import { InputManager } from './managers/InputManager.js';
 import { AssetManager } from './managers/AssetManager.js';
 import { StateManager } from './managers/StateManager.js';
+import { TextureGenerator } from './managers/TextureGenerator.js';
 
 export class Game {
     constructor() {
@@ -14,6 +15,7 @@ export class Game {
 
         this.inputManager = new InputManager();
         this.assetManager = new AssetManager();
+        this.textureGenerator = new TextureGenerator();
         this.stateManager = new StateManager(this);
 
         window.addEventListener('resize', () => {
