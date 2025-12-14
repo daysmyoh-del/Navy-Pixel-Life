@@ -39,4 +39,5 @@ export const CONSTANTS = {
         ASSETS: {
             // No assets to load, using procedural generation
         }
-    };
+    }
+};
