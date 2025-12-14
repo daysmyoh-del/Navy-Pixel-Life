@@ -1,0 +1,12 @@
+// Note: Player class is strictly for Soldier logic in original design
+// To support Ship/Plane input for "Player", we should have made Player a Controller that possesses a Pawn.
+// However, given current structure, Ship/Plane are Units, and Player is a Unit. 
+// GameState creates "new Ship()" for player instead of "new Player()".
+// So we need to ensure Ship and Plane handle INPUT themselves or GameState handles input for them.
+// Let's check GameState logic -> it calls this.player.update().
+// If this.player is a Ship, it calls Ship.update().
+// But Ship.update currently does physics, but expects "vx" to be set.
+// We need to ADD Input Handling to Ship/Plane update methods directly if they are "controlled by player".
+
+// Actually, simpler fix: Add an 'input(inputManager)' method to Unit, override in Ship/Plane/Player.
+// GameState calls this.player.handleInput(this.game.inputManager).

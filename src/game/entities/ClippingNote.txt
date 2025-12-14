@@ -1,0 +1,7 @@
+
+// Note: We modifying draw methods in sub classes, but they call super.draw() mainly for health bars.
+// To fix the "Asset Square Background" issue, we need to enforce that WHENEVER an image is drawn for a unit,
+// it clips to a circle.
+// The best place is in the specific class draw() methods (Player, Bot, Ship, Plane).
+
+// I will update them all to standard logic.
