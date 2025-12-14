@@ -16,13 +16,8 @@ export class MenuState {
     update(deltaTime) {
         const input = this.game.inputManager;
 
-        // Simple selection via keys for now
-        if (input.isKeyDown('Digit1')) {
-            this.game.stateManager.switchState('BASE_SELECT', { branch: CONSTANTS.BRANCHES.ARMY });
-        } else if (input.isKeyDown('Digit2')) {
-            this.game.stateManager.switchState('BASE_SELECT', { branch: CONSTANTS.BRANCHES.NAVY });
-        } else if (input.isKeyDown('Digit3')) {
-            this.game.stateManager.switchState('BASE_SELECT', { branch: CONSTANTS.BRANCHES.AIR_FORCE });
+        if (input.isKeyDown('Enter') || input.isKeyDown('Space')) {
+            this.game.stateManager.switchState('GAME', { branch: CONSTANTS.BRANCHES.NAVY });
         }
     }
 
@@ -31,14 +26,18 @@ export class MenuState {
         ctx.fillRect(0, 0, this.game.canvas.width, this.game.canvas.height);
 
         ctx.fillStyle = 'white';
-        ctx.font = '30px Arial';
+        ctx.fillStyle = 'white';
+        // Retro Font style?
+        ctx.font = '40px monospace';
         ctx.textAlign = 'center';
-        ctx.fillText('MILITARY WAR SIMULATOR', this.game.canvas.width / 2, 150);
+        ctx.fillText('NAVY PIXEL LIFE', this.game.canvas.width / 2, 200);
 
-        ctx.font = '20px Arial';
-        ctx.fillText('Select Branch to Deploy:', this.game.canvas.width / 2, 250);
-        ctx.fillText('1. ARMY (Ground Combat)', this.game.canvas.width / 2, 300);
-        ctx.fillText('2. NAVY (Ship Battles)', this.game.canvas.width / 2, 350);
-        ctx.fillText('3. AIR FORCE (Aerial Bombing)', this.game.canvas.width / 2, 400);
+        ctx.font = '24px monospace';
+        if (Math.floor(Date.now() / 500) % 2 === 0) { // Blink effect
+            ctx.fillText('PRESS ENTER TO START', this.game.canvas.width / 2, 350);
+        }
+
+        ctx.font = '16px monospace';
+        ctx.fillText('WASD to Move | E to Interact | Click to Shoot', this.game.canvas.width / 2, 450);
     }
 }
