@@ -47,21 +47,21 @@ export class Ship {
     initPatterns(ctx) {
         if (!this.woodPattern) {
             // We need a TextureGenerator instance. 
-            // In a pro engine, this is central. Here we cheat slightly for specific patterns.
-            const woodCvs = this.createTextureCanvas(64, 64, '#8d6e63', (c) => {
-                c.strokeStyle = '#4e342e'; c.lineWidth = 2;
-                for (let i = 0; i < 64; i += 16) { c.moveTo(0, i); c.lineTo(64, i); }
-                c.stroke();
-                c.fillStyle = '#3e2723';
-                for (let i = 0; i < 64; i += 16) { c.fillRect(4, i + 7, 2, 2); c.fillRect(58, i + 7, 2, 2); }
-            });
-            this.woodPattern = ctx.createPattern(woodCvs, 'repeat');
+            const patternCvs = this.game.textureGenerator.generateSteel();
+            this.woodPattern = ctx.createPattern(patternCvs, 'repeat'); // Reuse var name, but it's steel now
 
-            const metalCvs = this.createTextureCanvas(64, 64, '#607d8b', (c) => {
-                c.fillStyle = '#455a64';
-                for (let x = 4; x < 64; x += 16) for (let y = 4; y < 64; y += 16) c.fillRect(x, y, 4, 4);
-            });
+            const metalCvs = this.game.textureGenerator.generateMetal();
             this.metalPattern = ctx.createPattern(metalCvs, 'repeat');
+
+            this.itemPatterns = {
+                ladder: this.game.textureGenerator.generateLadder(),
+                bed: this.game.textureGenerator.generateBed(),
+                table: this.game.textureGenerator.generateTable(),
+                target: this.game.textureGenerator.generateTarget(),
+                vls: this.game.textureGenerator.generateVLS(),
+                helipad: this.game.textureGenerator.generateHelipad(),
+                radar: this.game.textureGenerator.generateRadar()
+            };
         }
     }
 
@@ -75,70 +75,41 @@ export class Ship {
     }
 
     parseStations() {
-        const offsetX = -(this.deckMap[0].length * this.tileSize) / 2;
-        const offsetY = -(this.deckMap.length * this.tileSize) / 2;
-
-        this.deckMap.forEach((row, r) => {
-            row.forEach((tile, c) => {
-                if (tile === 3) {
-                    // Cannon
-                    this.stations.push({
-                        x: offsetX + c * this.tileSize,
-                        y: offsetY + r * this.tileSize,
-                        width: this.tileSize,
-                        height: this.tileSize,
-                        type: 'CANNON',
-                        occupiedBy: null
-                    });
-                }
-            });
-        });
-
-        // Add Helm Manually (Stern)
-        this.stations.push({
-            x: 0,
-            y: (this.deckMap.length / 2 - 2) * this.tileSize, // Near back
-            width: this.tileSize,
-            height: this.tileSize,
-            type: 'HELM',
-            occupiedBy: null,
-            deckIndex: 0
-        });
-
-        // Add Ladders (Deck Switching)
-        this.stations.push({
-            x: 0,
-            y: -100, // Near front?
-            width: this.tileSize,
-            height: this.tileSize,
-            type: 'LADDER_DOWN',
-            deckIndex: 0
-        });
-
-        this.stations.push({
-            x: 0,
-            y: -100,
-            width: this.tileSize,
-            height: this.tileSize,
-            type: 'LADDER_UP',
-            deckIndex: 1
-        });
-
-        // Restricted Zones
+        // Stations Init (cleared logic inside gen)
+        this.stations = []; // Clear old stations
         this.zones = [
             {
                 name: "The Bridge",
                 deckIndex: 0,
-                x: -150, y: -200, width: 300, height: 200, // Area around Helm
-                requiredRank: 3 // Officer+
-            },
-            {
-                name: "Captain's Quarters",
-                deckIndex: 1,
-                x: -150, y: 300, width: 300, height: 200, // Back of Lower Deck
-                requiredRank: 4 // Captain
+                x: -100, y: -800, width: 200, height: 200,
+                requiredRank: 3
             }
         ];
+
+        // Regenerate to fill stations
+        this.decks = [
+            this.generateMainDeck(),
+            this.generateLowerDeck()
+        ];
+        this.deckMap = this.decks[0];
+        this.tileSize = 64; // Ensure size
+        this.currentDeckIndex = 0;
+    }
+
+    // Helper to add stations during generation
+    addStation(c, r, type, deck) {
+        // Find offset
+        const offsetX = -(24 * this.tileSize) / 2;
+        const offsetY = -(80 * this.tileSize) / 2;
+
+        this.stations.push({
+            x: offsetX + c * this.tileSize,
+            y: offsetY + r * this.tileSize,
+            width: this.tileSize,
+            height: this.tileSize,
+            type: type,
+            deckIndex: deck
+        });
     }
 
     getZoneAt(x, y, deckIndex) {
@@ -159,67 +130,145 @@ export class Ship {
         sailor.speak(newDeckIndex === 0 ? "Main Deck" : "Lower Deck");
     }
 
+    // Modern Destroyer (Arleigh Burke-ish)
+    // Size: 24 wide x 80 long (Massive)
     generateMainDeck() {
-        const cols = 8;
-        const rows = 16;
+        const cols = 24;
+        const rows = 80;
         let map = [];
+
+        // Reset stations if regenerating? (assume init only)
+        // We push stations manually below.
+
         for (let r = 0; r < rows; r++) {
             let row = [];
             for (let c = 0; c < cols; c++) {
-                // Hull shape
-                if (r === 0 || r === rows - 1) {
-                    // Prow/Stern
-                    row.push((c > 2 && c < 5) ? 1 : 0);
+                // Hull Shape (Long and narrow)
+                // Center is c=12
+                const distFromCenter = Math.abs(c - 11.5);
+                const widthAtRow = this.getHullWidth(r, rows);
+
+                if (distFromCenter < widthAtRow) {
+                    // Valid Deck
+                    // Edge check for railings (Wall)
+                    if (distFromCenter > widthAtRow - 1.5) row.push(CONSTANTS.TILES.WALL);
+                    else row.push(CONSTANTS.TILES.DECK);
                 } else {
-                    // Main deck
-                    if (c === 0 || c === cols - 1) row.push(2); // Railing
-                    else row.push(1); // Deck
+                    row.push(CONSTANTS.TILES.EMPTY);
                 }
             }
             map.push(row);
         }
 
-        // Place some cannons and Ladder
-        map[3][0] = 3; map[3][cols - 1] = 3;
-        map[6][0] = 3; map[6][cols - 1] = 3;
-        map[9][0] = 3; map[9][cols - 1] = 3;
+        // Features
+        // Bow (Front): VLS Array
+        for (let r = 5; r < 15; r += 2) {
+            for (let c = 10; c < 14; c += 2) {
+                if (map[r][c] === CONSTANTS.TILES.DECK) map[r][c] = CONSTANTS.TILES.VLS;
+            }
+        }
 
-        map[5][4] = CONSTANTS.TILES.LADDER; // Visual only, interaction is station
+        // Main Gun (Forward)
+        map[3][11] = CONSTANTS.TILES.CANNON_MOUNT; // Turret
+
+        // Superstructure (Midship: r=20 to r=50)
+        for (let r = 25; r < 45; r++) {
+            for (let c = 8; c < 16; c++) {
+                if (c === 8 || c === 15 || r === 25 || r === 44) map[r][c] = CONSTANTS.TILES.WALL;
+            }
+        }
+        // Bridge Windows
+        map[25][11] = CONSTANTS.TILES.HELM; // Only visible inside though? No, Main Deck Bridge is Superstructure top
+        // Let's put Helm inside a "Control Room" area or just outside for visibility.
+        // Let's put it at r=24 (Balcony)
+
+        // Helipad (Stern)
+        for (let r = 65; r < 75; r++) {
+            for (let c = 8; c < 16; c++) {
+                map[r][c] = CONSTANTS.TILES.HELIPAD;
+            }
+        }
+
+        // Ladder (Midship)
+        map[40][12] = CONSTANTS.TILES.LADDER;
+
+        // Stations
+        // Clear old ones first if needed (constructor does this once)
+        // Add Stations logic for new map:
+        this.addStation(11, 3, 'TURRET', 0); // Main Gun
+        this.addStation(12, 40, 'LADDER_DOWN', 0);
+        this.addStation(11, 24, 'HELM', 0); // Bridge Command
 
         return map;
     }
 
+    getHullWidth(r, totalRows) {
+        // Tapered bow, straight body, square stern
+        if (r < 15) return (r / 15) * 10; // 0 to 10 width
+        if (r > totalRows - 10) return 9; // Slightly narrower stern
+        return 10; // Full width (20 total)
+    }
+
     generateLowerDeck() {
-        const cols = 8;
-        const rows = 16;
+        const cols = 24;
+        const rows = 80;
         let map = [];
+
         for (let r = 0; r < rows; r++) {
             let row = [];
             for (let c = 0; c < cols; c++) {
-                // Hull shape (Slightly narrower?)
-                if (r === 0 || r === rows - 1) {
-                    row.push(0);
-                } else if (c === 0 || c === cols - 1) {
-                    row.push(2); // Walls (Metal)
+                const distFromCenter = Math.abs(c - 11.5);
+                const widthAtRow = this.getHullWidth(r, rows);
+
+                if (distFromCenter < widthAtRow) {
+                    if (distFromCenter > widthAtRow - 1.5) row.push(CONSTANTS.TILES.WALL);
+                    else row.push(CONSTANTS.TILES.DECK);
                 } else {
-                    row.push(1); // Floor
+                    row.push(CONSTANTS.TILES.EMPTY);
                 }
             }
             map.push(row);
         }
 
-        // Rooms
-        // Mess Hall (Tables)
-        map[3][3] = CONSTANTS.TILES.TABLE; map[3][4] = CONSTANTS.TILES.TABLE;
+        // Subdivision (Rooms)
+        // CIC (Combat Info Center) - Forward
+        this.createRoom(map, 9, 20, 6, 10, CONSTANTS.TILES.RADAR);
 
-        // Berthing (Beds)
-        map[7][1] = CONSTANTS.TILES.BED; map[7][6] = CONSTANTS.TILES.BED;
-        map[9][1] = CONSTANTS.TILES.BED; map[9][6] = CONSTANTS.TILES.BED;
+        // Mess Hall - Mid
+        this.createRoom(map, 9, 35, 6, 8, CONSTANTS.TILES.TABLE);
+
+        // Berthing - Rear
+        this.createRoom(map, 8, 50, 8, 15, CONSTANTS.TILES.BED);
+
+        // Engine - Deep Rear
+        this.createRoom(map, 9, 70, 6, 6, CONSTANTS.TILES.WALL); // Engine blocks
 
         // Ladder
-        map[5][4] = CONSTANTS.TILES.LADDER;
+        map[40][12] = CONSTANTS.TILES.LADDER;
+        this.addStation(12, 40, 'LADDER_UP', 1);
+
+        // Stations for rooms
+        // CIC
+        this.addStation(11, 25, 'RADAR_CONSOLE', 1);
 
         return map;
+    }
+
+    createRoom(map, x, y, w, h, furniture) {
+        // Walls
+        for (let r = y; r < y + h; r++) {
+            for (let c = x; c < x + w; c++) {
+                if (r === y || r === y + h - 1 || c === x || c === x + w - 1) {
+                    map[r][c] = CONSTANTS.TILES.WALL;
+                } else {
+                    // Furniture placement
+                    if (furniture && (r + c) % 2 === 0) map[r][c] = furniture;
+                    else map[r][c] = CONSTANTS.TILES.DECK;
+                }
+            }
+        }
+        // Door
+        map[y + h - 1][x + Math.floor(w / 2)] = CONSTANTS.TILES.DECK;
     }
 
     addCrew(crewMember) {
@@ -297,64 +346,52 @@ export class Ship {
                 const tx = offsetX + c * this.tileSize;
                 const ty = offsetY + r * this.tileSize;
 
-                if (tile === 0) return; // Empty (Water visible below)
+                if (tile === CONSTANTS.TILES.EMPTY) return;
 
-                if (tile === 1 || tile === 3) { // Deck or Cannon base
-                    ctx.fillStyle = this.woodPattern || '#8d6e63';
+                // Draw Floor based on Tile
+                if (tile === CONSTANTS.TILES.DECK) {
+                    ctx.fillStyle = this.woodPattern; // This is now steel
                     ctx.fillRect(tx, ty, this.tileSize, this.tileSize);
-
-                    // Shadow for depth
-                    ctx.fillStyle = 'rgba(0,0,0,0.1)';
-                    ctx.fillRect(tx, ty, this.tileSize, 2);
                 }
 
-                if (tile === 2) {
-                    // Wall / Railing
-                    ctx.fillStyle = this.metalPattern || '#546e7a';
+                if (tile === CONSTANTS.TILES.WALL) {
+                    ctx.fillStyle = '#37474f';
                     ctx.fillRect(tx, ty, this.tileSize, this.tileSize);
-                    ctx.fillStyle = 'rgba(0,0,0,0.3)'; // Top bevel
+                    ctx.fillStyle = '#263238'; // Top bevel
                     ctx.fillRect(tx, ty, this.tileSize, 8);
                 }
 
-                if (tile === 3) {
-                    // Detailed Cannon
-                    const cx = tx + 32;
-                    const cy = ty + 32;
-
-                    // Base Wheels
-                    ctx.fillStyle = '#3e2723';
-                    ctx.fillRect(cx - 20, cy - 10, 40, 20);
-
-                    // Barrel (Black Metal)
-                    ctx.fillStyle = '#212121';
-                    ctx.save();
-                    // Face slightly starboard/port?
-                    // Just simple cylinder for top down
-                    ctx.beginPath();
-                    ctx.ellipse(cx, cy, 15, 25, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Fuse point
-                    ctx.fillStyle = '#ff5722';
-                    ctx.beginPath();
-                    ctx.arc(cx, cy + 10, 3, 0, Math.PI * 2);
-                    ctx.fillRect(tx + 10, ty + 20, 44, 24); // Barrel (facing side?)
-                    ctx.restore();
+                if (tile === CONSTANTS.TILES.HELIPAD) {
+                    if (this.itemPatterns.helipad) ctx.drawImage(this.itemPatterns.helipad, tx, ty);
+                }
+                if (tile === CONSTANTS.TILES.VLS) {
+                    if (this.itemPatterns.vls) ctx.drawImage(this.itemPatterns.vls, tx, ty);
+                }
+                if (tile === CONSTANTS.TILES.RADAR) {
+                    if (this.itemPatterns.radar) ctx.drawImage(this.itemPatterns.radar, tx, ty);
                 }
 
-                // New Tiles
+                if (tile === CONSTANTS.TILES.CANNON_MOUNT) {
+                    // Detailed Turret
+                    ctx.fillStyle = '#607d8b'; // Turret housing
+                    ctx.beginPath();
+                    ctx.arc(tx + 32, ty + 32, 24, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.stroke();
+                    // Barrel
+                    ctx.fillStyle = '#455a64';
+                    ctx.fillRect(tx + 28, ty - 10, 8, 40);
+                }
+
+                // Keep old ones too
                 if (tile === CONSTANTS.TILES.LADDER) {
-                    ctx.fillStyle = '#5d4037';
-                    ctx.fillRect(tx + 10, ty, 5, 64); ctx.fillRect(tx + 50, ty, 5, 64);
-                    for (let i = 0; i < 64; i += 10) ctx.fillRect(tx + 10, ty + i, 40, 4);
+                    if (this.itemPatterns.ladder) ctx.drawImage(this.itemPatterns.ladder, tx, ty);
                 }
                 if (tile === CONSTANTS.TILES.BED) {
-                    ctx.fillStyle = '#90caf9'; ctx.fillRect(tx + 5, ty + 5, 54, 54); // Bed
-                    ctx.fillStyle = 'white'; ctx.fillRect(tx + 5, ty + 5, 54, 15); // Pillow
+                    if (this.itemPatterns.bed) ctx.drawImage(this.itemPatterns.bed, tx, ty);
                 }
                 if (tile === CONSTANTS.TILES.TABLE) {
-                    ctx.fillStyle = '#795548';
-                    ctx.beginPath(); ctx.arc(tx + 32, ty + 32, 28, 0, Math.PI * 2); ctx.fill();
+                    if (this.itemPatterns.table) ctx.drawImage(this.itemPatterns.table, tx, ty);
                 }
             });
         });

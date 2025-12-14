@@ -125,6 +125,90 @@ export class TextureGenerator {
         return cvs;
     }
 
+    generateSteel() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#455a64'; // Dark Blue-Grey (Non-skid)
+        ctx.fillRect(0, 0, 64, 64);
+
+        // Noise
+        for (let i = 0; i < 100; i++) {
+            ctx.fillStyle = Math.random() < 0.5 ? '#37474f' : '#546e7a';
+            ctx.fillRect(Math.random() * 64, Math.random() * 64, 2, 2);
+        }
+        return cvs;
+    }
+
+    generateVLS() {
+        // Missile Silo Hatch
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#37474f';
+        ctx.fillRect(0, 0, 64, 64);
+
+        ctx.strokeStyle = '#263238';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(2, 2, 60, 60);
+
+        // Grid
+        ctx.fillStyle = '#b0bec5'; // Hatch
+        ctx.fillRect(10, 10, 20, 20);
+        ctx.fillRect(34, 10, 20, 20);
+        ctx.fillRect(10, 34, 20, 20);
+        ctx.fillRect(34, 34, 20, 20);
+
+        return cvs;
+    }
+
+    generateHelipad() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#455a64';
+        ctx.fillRect(0, 0, 64, 64);
+
+        // White Marking
+        ctx.fillStyle = 'white';
+        ctx.fillRect(20, 10, 10, 44); // Left leg
+        ctx.fillRect(34, 10, 10, 44); // Right leg
+        ctx.fillRect(20, 28, 24, 8);  // Cross bar
+
+        return cvs;
+    }
+
+    generateRadar() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(10, 10, 44, 44); // Screen
+
+        ctx.strokeStyle = '#0f0';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(32, 32, 20, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.fillStyle = '#0f0';
+        ctx.beginPath();
+        ctx.arc(32, 32, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Sweep
+        ctx.strokeStyle = 'rgba(0, 255, 0, 0.5)';
+        ctx.beginPath();
+        ctx.moveTo(32, 32); ctx.lineTo(48, 16);
+        ctx.stroke();
+
+        return cvs;
+    }
+
     generateBed() {
         const cvs = document.createElement('canvas');
         cvs.width = 64; cvs.height = 64;

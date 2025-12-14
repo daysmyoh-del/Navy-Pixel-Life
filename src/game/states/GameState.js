@@ -21,8 +21,17 @@ export class GameState {
         this.ship = new Ship(this.game, 0, 0);
 
         // Create Player Sailor
-        this.player = new Sailor(this.game, 0, 0, true); // Center of ship
+        this.player = new Sailor(this.game, 0, 0, true);
         this.ship.addCrew(this.player);
+
+        // Find safe spawn (Deck tile)
+        const spawnTile = this.findSafeSpawn();
+        if (spawnTile) {
+            this.player.localX = spawnTile.x;
+            this.player.localY = spawnTile.y;
+            this.player.targetX = spawnTile.x;
+            this.player.targetY = spawnTile.y;
+        }
 
         // Add AI Crew
         for (let i = 0; i < 5; i++) {
@@ -48,19 +57,50 @@ export class GameState {
 
         this.ship.update(deltaTime);
 
-        // Update Camera to follow Ship Position
-        this.camera.x = this.ship.worldX;
-        this.camera.y = this.ship.worldY;
-
-        // Logic for auto-zoom?
-        // If in combat (or general quarters), zoom in. Else zoom out.
-        // Simple toggle for now: Distance based or just default out
         this.jobSystem.update(deltaTime);
 
-        // Dynamic Zoom based on speed (or Combat)
-        // Base zoom 0.8. Max speed (5.0?) -> Zoom 0.4
-        const targetZoom = 0.8 - (this.ship.speed * 0.05);
-        this.camera.setZoom(Math.max(0.4, targetZoom));
+        // Update Camera to follow PLAYER
+        // Convert Player Local -> World
+        // We know Player Local and Ship World.
+        // WorldX = Ship.WorldX + (Rotated LocalX)
+        // For simplicity (since rotation is usually 0 unless turning):
+        const rad = this.ship.worldRotation;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+
+        const px = this.ship.worldX + (this.player.localX * cos - this.player.localY * sin);
+        const py = this.ship.worldY + (this.player.localX * sin + this.player.localY * cos);
+
+        // Smooth camera
+        this.camera.x += (px - this.camera.x) * 0.1;
+        this.camera.y += (py - this.camera.y) * 0.1;
+
+        // Dynamic Zoom (closer for player focus)
+        this.camera.setZoom(0.8); // Fixed zoom for walking feeling
+    }
+
+    findSafeSpawn() {
+        // Find a DECK tile in the map
+        const map = this.ship.deckMap;
+        const rows = map.length;
+        const cols = map[0].length;
+        const offX = -(cols * this.ship.tileSize) / 2;
+        const offY = -(rows * this.ship.tileSize) / 2;
+
+        for (let r = 40; r < 60; r++) { // Spwn mid-ship
+            for (let c = 5; c < 20; c++) {
+                if (map[r] && map[r][c] === 1) { // 1 = Deck (Old ID) or CONSTANTS check?
+                    // We used consts in generation but raw IDs might be simpler if imported.
+                    // Let's assume 1 is Deck. 
+                    // Actually better: check if it's NOT empty/wall
+                    return {
+                        x: offX + c * 64 + 32,
+                        y: offY + r * 64 + 32
+                    };
+                }
+            }
+        }
+        return { x: 0, y: 0 };
     }
 
     draw(ctx) {

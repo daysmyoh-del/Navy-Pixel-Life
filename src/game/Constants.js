@@ -9,7 +9,11 @@ export const CONSTANTS = {
         BED: 5,
         TABLE: 6,
         TARGET: 7,
-        HELM: 8
+        HELM: 8,
+        VLS: 9,       // Vertical Launch System
+        HELIPAD: 10,
+        RADAR: 11,
+        SERVER: 12    // For CIC
     },
     RANKS: [
         { title: 'Private', xp: 0, unlocks: ['RIFLE', 'PISTOL'] },
