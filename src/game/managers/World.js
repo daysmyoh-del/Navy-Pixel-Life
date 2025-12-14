@@ -6,6 +6,10 @@ export class World {
         this.type = type; // 'ground', 'sea', 'air', 'base_interior'
         this.tileSize = CONSTANTS.TILE_SIZE;
         this.textures = {};
+
+        // Islands (Ports)
+        this.islands = [];
+        this.islandTimer = 0;
     }
 
     init(textureGen) {
@@ -53,46 +57,102 @@ export class World {
                     img = this.textures.base;
                 }
 
-                const x = (c * this.tileSize);
-                const y = (r * this.tileSize);
+                const x = (c * this.tileSize) - camera.x;
+                const y = (r * this.tileSize) - camera.y;
 
                 ctx.drawImage(img, x, y);
             }
         }
+
+        // Draw Islands (World Objects)
+        this.islands.forEach(island => {
+            const ix = island.x - camera.x;
+            const iy = island.y - camera.y;
+
+            // Draw Island Sprite (Procedural: Yellow/Green circle)
+            ctx.fillStyle = '#fdd835'; // Sand
+            ctx.beginPath();
+            ctx.arc(ix, iy, 150, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#4caf50'; // Trees layer
+            ctx.beginPath();
+            ctx.arc(ix, iy, 100, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Port Label
+            ctx.fillStyle = 'white';
+            ctx.font = '20px monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText("PORT " + island.id, ix, iy - 160);
+        });
     }
 
-    drawBaseInterior(ctx, camera) {
-        const baseX = 0 - camera.x;
-        const baseY = 0 - camera.y;
+    update(deltaTime, playerShip) {
+        // Procedurally spawn islands in front of ship?
+        // Or just random scatter.
+        // Let's keep a few alive.
+        if (this.islands.length < 2) {
+            // Spawn far away
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 2000 + Math.random() * 2000;
+            this.islands.push({
+                id: Math.floor(Math.random() * 900) + 100,
+                x: playerShip.worldX + Math.cos(angle) * dist,
+                y: playerShip.worldY + Math.sin(angle) * dist
+            });
+        }
 
-        ctx.fillStyle = '#2e2';
-        ctx.fillRect(baseX - 1000, baseY - 1000, 4000, 4000);
+        // Check for Docking
+        if (playerShip) {
+            let nearIsland = null;
+            this.islands.forEach(isl => {
+                const dist = Math.hypot(isl.x - playerShip.worldX, isl.y - playerShip.worldY);
+                if (dist < 300) nearIsland = isl;
+            });
 
-        ctx.fillStyle = '#444';
-        ctx.fillRect(baseX, baseY, 800, 600);
+            if (nearIsland) {
+                // Show Dock Prompt?
+                // Handled in GameState or here?
+                // For simplicity, auto-refuel logic or prompt
+                playerShip.nearPort = true;
+            } else {
+                playerShip.nearPort = false;
+            }
+        }
 
-        ctx.strokeStyle = '#111';
-        ctx.lineWidth = 10;
-        ctx.strokeRect(baseX, baseY, 800, 600);
+        drawBaseInterior(ctx, camera) {
+            const baseX = 0 - camera.x;
+            const baseY = 0 - camera.y;
 
-        this.drawRoom(ctx, baseX + 50, baseY + 50, 200, 150, 'Barracks', '#556');
-        this.drawRoom(ctx, baseX + 300, baseY + 50, 200, 150, 'Mess Hall', '#654');
-        this.drawRoom(ctx, baseX + 550, baseY + 50, 200, 150, 'Armory', '#333');
-        this.drawRoom(ctx, baseX + 50, baseY + 300, 200, 200, 'Gym', '#455');
+            ctx.fillStyle = '#2e2';
+            ctx.fillRect(baseX - 1000, baseY - 1000, 4000, 4000);
 
-        this.drawRoom(ctx, baseX + 400, baseY + 400, 300, 150, 'DEPLOYMENT ZONE', '#222');
+            ctx.fillStyle = '#444';
+            ctx.fillRect(baseX, baseY, 800, 600);
+
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 10;
+            ctx.strokeRect(baseX, baseY, 800, 600);
+
+            this.drawRoom(ctx, baseX + 50, baseY + 50, 200, 150, 'Barracks', '#556');
+            this.drawRoom(ctx, baseX + 300, baseY + 50, 200, 150, 'Mess Hall', '#654');
+            this.drawRoom(ctx, baseX + 550, baseY + 50, 200, 150, 'Armory', '#333');
+            this.drawRoom(ctx, baseX + 50, baseY + 300, 200, 200, 'Gym', '#455');
+
+            this.drawRoom(ctx, baseX + 400, baseY + 400, 300, 150, 'DEPLOYMENT ZONE', '#222');
+        }
+
+        drawRoom(ctx, x, y, w, h, label, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, w, h);
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, w, h);
+
+            ctx.fillStyle = 'white';
+            ctx.font = '16px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x + w / 2, y + h / 2);
+        }
     }
-
-    drawRoom(ctx, x, y, w, h, label, color) {
-        ctx.fillStyle = color;
-        ctx.fillRect(x, y, w, h);
-        ctx.strokeStyle = 'white';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, y, w, h);
-
-        ctx.fillStyle = 'white';
-        ctx.font = '16px Arial';
-        ctx.textAlign = 'center';
-        ctx.fillText(label, x + w / 2, y + h / 2);
-    }
-}

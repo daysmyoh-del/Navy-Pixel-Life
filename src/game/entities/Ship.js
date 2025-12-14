@@ -17,7 +17,12 @@ export class Ship {
         // The "Level" / Deck
         // Simple grid for now: 0 = gap, 1 = deck, 2 = wall, 3 = cannon
         this.tileSize = 64;
-        this.deckMap = this.generateDeck();
+        this.currentDeckIndex = 0; // 0 = Main, 1 = Lower
+        this.decks = [
+            this.generateMainDeck(),
+            this.generateLowerDeck()
+        ];
+        this.deckMap = this.decks[0]; // Active deck
 
         // Entities ON the ship (Local coordinates relative to ship center)
         this.crew = [];
@@ -96,11 +101,41 @@ export class Ship {
             width: this.tileSize,
             height: this.tileSize,
             type: 'HELM',
-            occupiedBy: null
+            occupiedBy: null,
+            deckIndex: 0
+        });
+
+        // Add Ladders (Deck Switching)
+        this.stations.push({
+            x: 0,
+            y: -100, // Near front?
+            width: this.tileSize,
+            height: this.tileSize,
+            type: 'LADDER_DOWN',
+            deckIndex: 0
+        });
+
+        this.stations.push({
+            x: 0,
+            y: -100,
+            width: this.tileSize,
+            height: this.tileSize,
+            type: 'LADDER_UP',
+            deckIndex: 1
         });
     }
 
-    generateDeck() {
+    switchDeck(sailor, newDeckIndex) {
+        if (newDeckIndex < 0 || newDeckIndex >= this.decks.length) return;
+
+        this.currentDeckIndex = newDeckIndex;
+        this.deckMap = this.decks[newDeckIndex];
+
+        // Visual feedback?
+        sailor.speak(newDeckIndex === 0 ? "Main Deck" : "Lower Deck");
+    }
+
+    generateMainDeck() {
         const cols = 8;
         const rows = 16;
         let map = [];
@@ -120,10 +155,45 @@ export class Ship {
             map.push(row);
         }
 
-        // Place some cannons
+        // Place some cannons and Ladder
         map[3][0] = 3; map[3][cols - 1] = 3;
         map[6][0] = 3; map[6][cols - 1] = 3;
         map[9][0] = 3; map[9][cols - 1] = 3;
+
+        map[5][4] = CONSTANTS.TILES.LADDER; // Visual only, interaction is station
+
+        return map;
+    }
+
+    generateLowerDeck() {
+        const cols = 8;
+        const rows = 16;
+        let map = [];
+        for (let r = 0; r < rows; r++) {
+            let row = [];
+            for (let c = 0; c < cols; c++) {
+                // Hull shape (Slightly narrower?)
+                if (r === 0 || r === rows - 1) {
+                    row.push(0);
+                } else if (c === 0 || c === cols - 1) {
+                    row.push(2); // Walls (Metal)
+                } else {
+                    row.push(1); // Floor
+                }
+            }
+            map.push(row);
+        }
+
+        // Rooms
+        // Mess Hall (Tables)
+        map[3][3] = CONSTANTS.TILES.TABLE; map[3][4] = CONSTANTS.TILES.TABLE;
+
+        // Berthing (Beds)
+        map[7][1] = CONSTANTS.TILES.BED; map[7][6] = CONSTANTS.TILES.BED;
+        map[9][1] = CONSTANTS.TILES.BED; map[9][6] = CONSTANTS.TILES.BED;
+
+        // Ladder
+        map[5][4] = CONSTANTS.TILES.LADDER;
 
         return map;
     }
@@ -247,15 +317,31 @@ export class Ship {
                     ctx.fillStyle = '#ff5722';
                     ctx.beginPath();
                     ctx.arc(cx, cy + 10, 3, 0, Math.PI * 2);
-                    ctx.fill();
-
+                    ctx.fillRect(tx + 10, ty + 20, 44, 24); // Barrel (facing side?)
                     ctx.restore();
+                }
+
+                // New Tiles
+                if (tile === CONSTANTS.TILES.LADDER) {
+                    ctx.fillStyle = '#5d4037';
+                    ctx.fillRect(tx + 10, ty, 5, 64); ctx.fillRect(tx + 50, ty, 5, 64);
+                    for (let i = 0; i < 64; i += 10) ctx.fillRect(tx + 10, ty + i, 40, 4);
+                }
+                if (tile === CONSTANTS.TILES.BED) {
+                    ctx.fillStyle = '#90caf9'; ctx.fillRect(tx + 5, ty + 5, 54, 54); // Bed
+                    ctx.fillStyle = 'white'; ctx.fillRect(tx + 5, ty + 5, 54, 15); // Pillow
+                }
+                if (tile === CONSTANTS.TILES.TABLE) {
+                    ctx.fillStyle = '#795548';
+                    ctx.beginPath(); ctx.arc(tx + 32, ty + 32, 28, 0, Math.PI * 2); ctx.fill();
                 }
             });
         });
 
-        // Draw Stations Interactions
+        // Draw Stations Interactions (Only for Current Deck)
         this.stations.forEach(s => {
+            // Need to track which deck station is on
+            if (s.deckIndex !== undefined && s.deckIndex !== this.currentDeckIndex) return;
             // Calculate World Pos of Station
             // Actually we are in Ship Space (rotated), so just draw local rect
 

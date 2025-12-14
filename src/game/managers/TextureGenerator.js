@@ -105,4 +105,73 @@ export class TextureGenerator {
 
         return cvs;
     }
+
+    generateLadder() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+        // Transparent BG
+
+        ctx.fillStyle = '#3e2723';
+        // Side rails
+        ctx.fillRect(10, 0, 5, 64);
+        ctx.fillRect(49, 0, 5, 64);
+
+        // Rungs
+        ctx.fillStyle = '#5d4037';
+        for (let y = 10; y < 64; y += 10) {
+            ctx.fillRect(10, y, 44, 4);
+        }
+        return cvs;
+    }
+
+    generateBed() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#90caf9'; // Blue sheets
+        ctx.fillRect(10, 10, 44, 50);
+        ctx.fillStyle = 'white'; // Pillow
+        ctx.fillRect(12, 12, 40, 10);
+        return cvs;
+    }
+
+    generateTable() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        ctx.fillStyle = '#795548'; // Wood table
+        ctx.beginPath();
+        ctx.arc(32, 32, 28, 0, Math.PI * 2);
+        ctx.fill();
+        return cvs;
+    }
+
+    generateTarget() {
+        const cvs = document.createElement('canvas');
+        cvs.width = 64; cvs.height = 64;
+        const ctx = cvs.getContext('2d');
+
+        // Stand
+        ctx.fillStyle = '#333';
+        ctx.fillRect(28, 40, 8, 24);
+
+        // Circle Red/White
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(32, 25, 20, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'white';
+        ctx.beginPath();
+        ctx.arc(32, 25, 12, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = 'red';
+        ctx.beginPath();
+        ctx.arc(32, 25, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        return cvs;
+    }
 }

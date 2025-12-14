@@ -1,5 +1,16 @@
 export const CONSTANTS = {
     TILE_SIZE: 64, // Used for world grid
+    TILES: {
+        EMPTY: 0,
+        DECK: 1,
+        WALL: 2,
+        CANNON_MOUNT: 3,
+        LADDER: 4,
+        BED: 5,
+        TABLE: 6,
+        TARGET: 7,
+        HELM: 8
+    },
     RANKS: [
         { title: 'Private', xp: 0, unlocks: ['RIFLE', 'PISTOL'] },
         { title: 'Sergeant', xp: 100, unlocks: ['SMG', 'SHOTGUN'] },

@@ -128,8 +128,15 @@ export class Sailor {
                         return;
                     }
 
-
-                    alert('Interact: ' + station.type);
+                    // Ladder Check
+                    if (station.type === 'LADDER_DOWN') {
+                        this.ship.switchDeck(this, 1);
+                        return;
+                    }
+                    if (station.type === 'LADDER_UP') {
+                        this.ship.switchDeck(this, 0);
+                        return;
+                    }
 
                     // Job Check
                     if (this.game.stateManager.currentState.jobSystem) {
