@@ -36,7 +36,7 @@ export const CONSTANTS = {
         MG_AIR: { name: 'Aircraft MG', damage: 1, rate: 80, speed: 1.0, spread: 0.1, color: 'yellow' }
     },
     ASSETS: {
-        // Placeholders in case we use them later
-        SOLDIER: '/assets/army_soldier_topdown_1765681777108.png',
-    }
-};
+        ASSETS: {
+            // No assets to load, using procedural generation
+        }
+    };
