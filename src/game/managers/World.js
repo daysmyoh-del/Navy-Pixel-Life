@@ -120,39 +120,40 @@ export class World {
                 playerShip.nearPort = false;
             }
         }
-
-        drawBaseInterior(ctx, camera) {
-            const baseX = 0 - camera.x;
-            const baseY = 0 - camera.y;
-
-            ctx.fillStyle = '#2e2';
-            ctx.fillRect(baseX - 1000, baseY - 1000, 4000, 4000);
-
-            ctx.fillStyle = '#444';
-            ctx.fillRect(baseX, baseY, 800, 600);
-
-            ctx.strokeStyle = '#111';
-            ctx.lineWidth = 10;
-            ctx.strokeRect(baseX, baseY, 800, 600);
-
-            this.drawRoom(ctx, baseX + 50, baseY + 50, 200, 150, 'Barracks', '#556');
-            this.drawRoom(ctx, baseX + 300, baseY + 50, 200, 150, 'Mess Hall', '#654');
-            this.drawRoom(ctx, baseX + 550, baseY + 50, 200, 150, 'Armory', '#333');
-            this.drawRoom(ctx, baseX + 50, baseY + 300, 200, 200, 'Gym', '#455');
-
-            this.drawRoom(ctx, baseX + 400, baseY + 400, 300, 150, 'DEPLOYMENT ZONE', '#222');
-        }
-
-        drawRoom(ctx, x, y, w, h, label, color) {
-            ctx.fillStyle = color;
-            ctx.fillRect(x, y, w, h);
-            ctx.strokeStyle = 'white';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(x, y, w, h);
-
-            ctx.fillStyle = 'white';
-            ctx.font = '16px Arial';
-            ctx.textAlign = 'center';
-            ctx.fillText(label, x + w / 2, y + h / 2);
-        }
     }
+
+    drawBaseInterior(ctx, camera) {
+        const baseX = 0 - camera.x;
+        const baseY = 0 - camera.y;
+
+        ctx.fillStyle = '#2e2';
+        ctx.fillRect(baseX - 1000, baseY - 1000, 4000, 4000);
+
+        ctx.fillStyle = '#444';
+        ctx.fillRect(baseX, baseY, 800, 600);
+
+        ctx.strokeStyle = '#111';
+        ctx.lineWidth = 10;
+        ctx.strokeRect(baseX, baseY, 800, 600);
+
+        this.drawRoom(ctx, baseX + 50, baseY + 50, 200, 150, 'Barracks', '#556');
+        this.drawRoom(ctx, baseX + 300, baseY + 50, 200, 150, 'Mess Hall', '#654');
+        this.drawRoom(ctx, baseX + 550, baseY + 50, 200, 150, 'Armory', '#333');
+        this.drawRoom(ctx, baseX + 50, baseY + 300, 200, 200, 'Gym', '#455');
+
+        this.drawRoom(ctx, baseX + 400, baseY + 400, 300, 150, 'DEPLOYMENT ZONE', '#222');
+    }
+
+    drawRoom(ctx, x, y, w, h, label, color) {
+        ctx.fillStyle = color;
+        ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
+
+        ctx.fillStyle = 'white';
+        ctx.font = '16px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x + w / 2, y + h / 2);
+    }
+}
